@@ -114,37 +114,7 @@ pub fn assert(shim_addr: usize, fnname: &str, expected: &str) {
         .ok()
         .map_or_else(
             || match expected {
-                // `cpuid` returns a pretty big aggregate structure, so exempt
-                // it from the slightly more restrictive 22 instructions below.
-                "cpuid" => 30,
-
-                // Apparently, on Windows, LLVM generates a bunch of
-                // saves/restores of xmm registers around these intstructions,
-                // which exceeds the limit of 20 below. As it seems dictated by
-                // Windows's ABI (I believe?), we probably can't do much
-                // about it.
-                "vzeroall" | "vzeroupper" if cfg!(windows) => 30,
-
-                // Intrinsics using `cvtpi2ps` are typically "composites" and
-                // in some cases exceed the limit.
-                "cvtpi2ps" => 25,
-                // core_arch/src/arm_shared/simd32
-                // vfmaq_n_f32_vfma : #instructions = 26 >= 22 (limit)
-                "usad8" | "vfma" | "vfms" => 27,
-                "qadd8" | "qsub8" | "sadd8" | "sel" | "shadd8" | "shsub8" | "usub8" | "ssub8" => 29,
-                // core_arch/src/arm_shared/simd32
-                // vst1q_s64_x4_vst1 : #instructions = 40 >= 22 (limit)
-                "vst1" => 41,
-
-                // Temporary, currently the fptosi.sat and fptoui.sat LLVM
-                // intrinsics emit unnecessary code on arm. This can be
-                // removed once it has been addressed in LLVM.
-                "fcvtzu" | "fcvtzs" | "vcvt" => 64,
-
-                // Original limit was 20 instructions, but ARM DSP Intrinsics
-                // are exactly 20 instructions long. So, bump the limit to 22
-                // instead of adding here a long list of exceptions.
-                _ => 22,
+                _ => 5,
             },
             |v| v.parse().unwrap(),
         );
